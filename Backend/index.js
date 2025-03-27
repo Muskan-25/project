@@ -19,50 +19,84 @@ app.get("/employees", (req, res) => {
 });
 
 // ✅ Employee Registration with Face Embedding
-app.post("/register", (req, res) => {
-    const { e_name, e_phone, faceEmbedding } = req.body;
+app.post("/register", async (req, res) => {
+  try {
+      const { e_name, e_phone, image_url, faceEmbedding } = req.body;
 
-    if (!faceEmbedding) return res.status(400).json({ error: "Face embedding is required" });
+      if (!Array.isArray(faceEmbedding)) {
+          return res.status(400).json({ error: "Invalid face embedding format" });
+      }
 
-    const sql = "INSERT INTO attendance_tracker.employees (e_name, e_phone, face_embedding) VALUES (?, ?, ?)";
-    db.query(sql, [e_name, e_phone, JSON.stringify(faceEmbedding)], (err, result) => {
-        if (err) return res.status(500).json({ error: "Database error" });
-        res.json({ message: "Employee registered successfully", id: result.insertId });
-    });
+      const sql = "INSERT INTO attendance_tracker.employees (e_name, e_phone, image_url, face_embedding) VALUES (?, ?, ?, ?)";
+      db.query(sql, [e_name, e_phone, image_url, JSON.stringify(faceEmbedding)], (err, result) => {
+          if (err) {
+              console.error("Error inserting employee:", err);
+              res.status(500).json({ error: "Database error" });
+          } else {
+              res.status(200).json({ message: "Employee registered successfully!" });
+          }
+      });
+  } catch (error) {
+      console.error("Error:", error);
+      res.status(500).json({ error: "Invalid JSON format" });
+  }
 });
+
+
+
+
+
 
 // ✅ Face Recognition API
-app.post("/recognize", (req, res) => {
-    const { faceEmbedding } = req.body;
-    console.log(faceEmbedding);
-    
-    if (!faceEmbedding) return res.status(400).json({ error: "Face embedding is required" });
+app.post("/recognize", async (req, res) => {
+  try {
+      const { faceEmbedding } = req.body;
 
-    db.query("SELECT * FROM attendance_tracker.employees", (err, employees) => {
-        if (err) return res.status(500).json({ error: "Database error" });
+      if (!Array.isArray(faceEmbedding)) {
+          return res.status(400).json({ error: "Invalid face embedding format" });
+      }
 
-        let bestMatch = null;
-        let minDistance = 0.6;
+      db.query("SELECT * FROM attendance_tracker.employees", (err, employees) => {
+          if (err) {
+              console.error("Database error:", err);
+              return res.status(500).json({ error: "Database error" });
+          }
 
-        employees.forEach(emp => {
-            if (!emp.face_embedding) return;
-            const storedEmbedding = JSON.parse(emp.face_embedding);
+          let bestMatch = null;
+          let minDistance = 0.6;
 
-            const distance = Math.sqrt(storedEmbedding.reduce((sum, val, i) => sum + Math.pow(val - faceEmbedding[i], 2), 0));
-            
-            if (distance < minDistance) {
-                bestMatch = emp;
-                minDistance = distance;
-            }
-        });
+          employees.forEach(emp => {
+              if (!emp.face_embedding) return;
 
-        if (bestMatch) {
-            return res.json({ match: true, employee: bestMatch });
-        } else {
-            return res.json({ match: false });
-        }
-    });
+              let storedEmbedding = emp.face_embedding;  // 🟢 MySQL se JSON mil raha hai, parse nahi karna
+              if (!Array.isArray(storedEmbedding) || storedEmbedding.length !== faceEmbedding.length) {
+                  console.error("Invalid embedding format:", storedEmbedding);
+                  return;
+              }
+
+              const distance = Math.sqrt(
+                  storedEmbedding.reduce((sum, val, i) => sum + Math.pow(val - faceEmbedding[i], 2), 0)
+              );
+
+              if (distance < minDistance) {
+                  bestMatch = emp;
+                  minDistance = distance;
+              }
+          });
+
+          if (bestMatch) {
+              return res.json({ match: true, employee: bestMatch });
+          } else {
+              return res.json({ match: false });
+          }
+      });
+  } catch (error) {
+      console.error("Error:", error);
+      res.status(500).json({ error: "Invalid JSON format" });
+  }
 });
+
+
 
 // ✅ Mark Attendance
 app.post("/mark-attendance", (req, res) => {

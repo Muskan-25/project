@@ -14,12 +14,14 @@ function Home() {
     useEffect(() => {
         const loadModels = async () => {
             try {
-                await faceapi.nets.tinyFaceDetector.loadFromUri("/models");
-                await faceapi.nets.faceLandmark68Net.loadFromUri("/models");
-                await faceapi.nets.faceRecognitionNet.loadFromUri("/models");
+                const MODEL_URL = process.env.PUBLIC_URL + "/models";  // ✅ Fix model path
+                await faceapi.nets.tinyFaceDetector.loadFromUri('./models');
+                await faceapi.nets.faceLandmark68Net.loadFromUri('./models');
+                await faceapi.nets.faceRecognitionNet.loadFromUri('./models');
                 setModelsLoaded(true);
+                console.log("✅ FaceAPI models loaded successfully!");
             } catch (error) {
-                console.error("Error loading models:", error);
+                console.error("❌ Error loading models:", error);
             }
         };
         loadModels();
@@ -36,51 +38,63 @@ function Home() {
             alert("Models are still loading. Please wait...");
             return;
         }
-
+    
         setLoading(true);
-
-        if (!webcamRef.current) {
-            console.error("Webcam not initialized");
+    
+        if (!webcamRef.current || !webcamRef.current.video) {
+            console.error("❌ Webcam not initialized");
             setLoading(false);
             return;
         }
-
+    
         const video = webcamRef.current.video;
-        const face = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
-            .withFaceLandmarks()
-            .withFaceDescriptor();
-
+    
+        console.log("📸 Capturing face...");
+        const face = await faceapi.detectSingleFace(
+            video,
+            new faceapi.TinyFaceDetectorOptions({ inputSize: 608, scoreThreshold: 0.4 })
+        ).withFaceLandmarks().withFaceDescriptor();
+    
         if (!face) {
-            alert("No face detected!");
+            alert("❌ No face detected! Ensure good lighting and try again.");
             setLoading(false);
             return;
         }
-
+    
+        console.log("✅ Face detected!");
         const faceEmbedding = Array.from(face.descriptor);
-
+    
+        if (!Array.isArray(faceEmbedding) || faceEmbedding.length === 0) {
+            console.error("Invalid face embedding:", faceEmbedding);
+            setLoading(false);
+            return;
+        }
+    
         try {
             const response = await axios.post("http://localhost:3001/recognize", { faceEmbedding });
+            
             if (response.data.match) {
                 setEmployee(response.data.employee);
             } else {
-                alert("Face not recognized!");
+                alert("⚠ Face not recognized! Try again.");
             }
         } catch (error) {
-            console.error("Error recognizing face:", error);
+            console.error("❌ Error recognizing face:", error);
         } finally {
             setLoading(false);
         }
     };
+    
 
     const confirmAttendance = async () => {
         if (!employee) return;
 
         try {
             await axios.post("http://localhost:3001/mark-attendance", { employee_id: employee.id });
-            alert("Attendance marked successfully!");
+            alert("✅ Attendance marked successfully!");
             closeModal();
         } catch (error) {
-            console.error("Error marking attendance:", error);
+            console.error("❌ Error marking attendance:", error);
         }
     };
 
@@ -99,7 +113,13 @@ function Home() {
                                 <button type="button" className="btn-close" onClick={closeModal}></button>
                             </div>
                             <div className="modal-body text-center">
-                                <Webcam ref={webcamRef} screenshotFormat="image/jpeg" width={320} height={240} />
+                                <Webcam 
+                                    ref={webcamRef} 
+                                    screenshotFormat="image/jpeg" 
+                                    width={640} 
+                                    height={480}
+                                    videoConstraints={{ width: 640, height: 480, facingMode: "user" }} 
+                                />
 
                                 {/* Bootstrap Spinner while loading */}
                                 {loading ? (

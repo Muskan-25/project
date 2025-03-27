@@ -52,4 +52,6 @@ db.connect((err) => {
     });
 });
 
+// ALTER TABLE attendance_tracker.employees ADD COLUMN face_embedding JSON;
+
 module.exports = db;
