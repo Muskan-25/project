@@ -85,9 +85,48 @@ function Home() {
         }
     };
     
+    const OFFICE_LAT = 31.607514192574556;  // Office latitude
+const OFFICE_LON = 74.89085705976689;  // Office longitude
+const MAX_DISTANCE = 1000;    // 200 meters max allowed
 
-    const confirmAttendance = async () => {
-        if (!employee) return;
+// Function to calculate distance between two coordinates
+const getDistance = (lat1, lon1, lat2, lon2) => {
+    const R = 6371; // 🌍 Earth radius in **kilometers**
+    const toRad = (value) => (value * Math.PI) / 180;
+
+    const dLat = toRad(lat2 - lat1);
+    const dLon = toRad(lon2 - lon1);
+
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+              Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+              Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+    const distanceInKm = R * c; // 🔥 Distance in KM
+    return distanceInKm * 1000; // 🔥 Convert to meters
+};
+
+const confirmAttendance = async () => {
+    if (!employee) return;
+
+    if (!navigator.geolocation) {
+        alert("❌ Location not supported on your device.");
+        return;
+    }
+
+    navigator.geolocation.getCurrentPosition(async (position) => {
+        const { latitude, longitude } = position.coords;
+        console.log(position);
+        
+
+        // 🔥 Calculate distance offline using Haversine formula
+        const distance = getDistance(latitude, longitude, OFFICE_LAT, OFFICE_LON);
+        console.log(distance);
+        
+        if (distance > MAX_DISTANCE) {
+            alert("⚠ You are too far from the office to mark attendance!");
+            return;
+        }
 
         try {
             await axios.post("http://localhost:3001/mark-attendance", { employee_id: employee.id });
@@ -96,7 +135,53 @@ function Home() {
         } catch (error) {
             console.error("❌ Error marking attendance:", error);
         }
-    };
+    }, (error) => {
+        alert("❌ Location access denied. Please allow location.");
+    });
+};
+
+
+// const GOOGLE_API_KEY = process.env.REACT_APP_GOOGLE_API_KEY; // 🔒 Secure API Key
+
+// const confirmAttendance = async () => {
+//     if (!employee) return;
+
+//     if (!navigator.geolocation) {
+//         alert("❌ Location not supported on your device.");
+//         return;
+//     }
+
+//     navigator.geolocation.getCurrentPosition(async (position) => {
+//         const { latitude, longitude } = position.coords;
+
+//         const officeLocation = "28.7041,77.1025"; // 📍 Office coordinates
+//         const employeeLocation = `${latitude},${longitude}`;
+
+//         try {
+//             const response = await axios.get(
+//                 `https://maps.googleapis.com/maps/api/distancematrix/json?origins=${employeeLocation}&destinations=${officeLocation}&key=${GOOGLE_API_KEY}`
+//             );
+
+//             const distance = response.data.rows[0].elements[0].distance.value; // 🔥 Distance in meters
+
+//             if (distance > 200) {
+//                 alert("⚠ You are too far from the office to mark attendance!");
+//                 return;
+//             }
+
+//             await axios.post("http://localhost:3001/mark-attendance", { employee_id: employee.id });
+//             alert("✅ Attendance marked successfully!");
+//             closeModal();
+//         } catch (error) {
+//             console.error("❌ Error getting distance:", error);
+//             alert("❌ Error fetching location data. Try again.");
+//         }
+//     }, (error) => {
+//         alert("❌ Location access denied. Please allow location.");
+//     });
+// };
+
+
 
     return (
         <>
