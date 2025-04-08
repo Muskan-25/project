@@ -18,7 +18,47 @@ app.get("/employees", (req, res) => {
     });
 });
 
-// ✅ Employee Registration with Face Embedding
+// Assuming Express.js backend
+app.get('/attendance-report', async (req, res) => {
+    try {
+      const { startDate, endDate } = req.query;
+  
+      let sql = `
+        SELECT 
+          a.*, e.*
+        FROM 
+          attendance_tracker.attendance AS a
+        JOIN 
+          attendance_tracker.employees AS e ON a.e_id = e.id
+      `;
+  
+      const values = [];
+  
+      if (startDate && endDate) {
+        // Use DATE() function to extract just the date part of the DATETIME column
+        sql += " WHERE DATE(a.date) BETWEEN ? AND ?";
+        values.push(startDate, endDate);
+      }
+  
+      sql += " ORDER BY a.date DESC";
+  
+      db.query(sql, values, (err, results) => {
+        if (err) {
+          console.error("DB Error:", err);
+          return res.status(500).json({ error: "Database error" });
+        }
+        res.json(results);
+      });
+    } catch (error) {
+      console.error("Error fetching attendance report:", error);
+      res.status(500).json({ message: "Internal Server Error" });
+    }
+  });
+  
+
+
+
+// Employee Registration with Face Embedding
 app.post("/register", async (req, res) => {
   try {
       const { e_name, e_phone, image_url, faceEmbedding } = req.body;
@@ -47,7 +87,7 @@ app.post("/register", async (req, res) => {
 
 
 
-// ✅ Face Recognition API
+// Face Recognition API
 app.post("/recognize", async (req, res) => {
   try {
       const { faceEmbedding } = req.body;
@@ -68,7 +108,7 @@ app.post("/recognize", async (req, res) => {
           employees.forEach(emp => {
               if (!emp.face_embedding) return;
 
-              let storedEmbedding = emp.face_embedding;  // 🟢 MySQL se JSON mil raha hai, parse nahi karna
+              let storedEmbedding = emp.face_embedding;  
               if (!Array.isArray(storedEmbedding) || storedEmbedding.length !== faceEmbedding.length) {
                   console.error("Invalid embedding format:", storedEmbedding);
                   return;
@@ -98,7 +138,7 @@ app.post("/recognize", async (req, res) => {
 
 
 
-// ✅ Mark Attendance
+// Mark Attendance
 app.post("/mark-attendance", (req, res) => {
     const { employee_id } = req.body;
     console.log(employee_id);

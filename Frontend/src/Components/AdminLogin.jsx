@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 function AdminLogin() {
 
@@ -20,7 +20,7 @@ function AdminLogin() {
         e.preventDefault();
         if(formData.email === 'admin@gmail.com' &&  formData.password === 'admin'){
             alert('Login Successful');
-            navigate('../employee-record')
+            navigate('../employees')
         }else{
             alert('invalid email or password')
         }
@@ -28,6 +28,8 @@ function AdminLogin() {
 
 
   return (
+    <>
+      <Link to='../'>Back</Link>
     <form onSubmit={(e)=>handleSubmit(e)}>
       <div className="mb-3">
         <label for="exampleInputEmail1" className="form-label">
@@ -59,6 +61,7 @@ function AdminLogin() {
         Submit
       </button>
     </form>
+    </>
   );
 }
 

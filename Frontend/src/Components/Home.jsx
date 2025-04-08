@@ -10,18 +10,20 @@ function Home() {
     const [loading, setLoading] = useState(false);
     const [showModal, setShowModal] = useState(false);
     const [modelsLoaded, setModelsLoaded] = useState(false);
+const GOOGLE_API_KEY = 'AIzaSyBiTug7g7l2EycWEMVnQ9rVwFPjSCDi9GM'; // Secure API Key
+
 
     useEffect(() => {
         const loadModels = async () => {
             try {
-                const MODEL_URL = process.env.PUBLIC_URL + "/models";  // ✅ Fix model path
+                const MODEL_URL = process.env.PUBLIC_URL + "/models";  // Fix model path
                 await faceapi.nets.tinyFaceDetector.loadFromUri('./models');
                 await faceapi.nets.faceLandmark68Net.loadFromUri('./models');
                 await faceapi.nets.faceRecognitionNet.loadFromUri('./models');
                 setModelsLoaded(true);
-                console.log("✅ FaceAPI models loaded successfully!");
+                console.log("FaceAPI models loaded successfully!");
             } catch (error) {
-                console.error("❌ Error loading models:", error);
+                console.error("Error loading models:", error);
             }
         };
         loadModels();
@@ -42,26 +44,26 @@ function Home() {
         setLoading(true);
     
         if (!webcamRef.current || !webcamRef.current.video) {
-            console.error("❌ Webcam not initialized");
+            console.error("Webcam not initialized");
             setLoading(false);
             return;
         }
     
         const video = webcamRef.current.video;
     
-        console.log("📸 Capturing face...");
+        console.log("Capturing face...");
         const face = await faceapi.detectSingleFace(
             video,
             new faceapi.TinyFaceDetectorOptions({ inputSize: 608, scoreThreshold: 0.4 })
         ).withFaceLandmarks().withFaceDescriptor();
     
         if (!face) {
-            alert("❌ No face detected! Ensure good lighting and try again.");
+            alert("No face detected! Ensure good lighting and try again.");
             setLoading(false);
             return;
         }
     
-        console.log("✅ Face detected!");
+        console.log("Face detected!");
         const faceEmbedding = Array.from(face.descriptor);
     
         if (!Array.isArray(faceEmbedding) || faceEmbedding.length === 0) {
@@ -79,7 +81,7 @@ function Home() {
                 alert("⚠ Face not recognized! Try again.");
             }
         } catch (error) {
-            console.error("❌ Error recognizing face:", error);
+            console.error("Error recognizing face:", error);
         } finally {
             setLoading(false);
         }
@@ -102,84 +104,84 @@ const getDistance = (lat1, lon1, lat2, lon2) => {
               Math.sin(dLon / 2) * Math.sin(dLon / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
-    const distanceInKm = R * c; // 🔥 Distance in KM
-    return distanceInKm * 1000; // 🔥 Convert to meters
+    const distanceInKm = R * c; // Distance in KM
+    return distanceInKm * 1000; // Convert to meters
 };
-
-const confirmAttendance = async () => {
-    if (!employee) return;
-
-    if (!navigator.geolocation) {
-        alert("❌ Location not supported on your device.");
-        return;
-    }
-
-    navigator.geolocation.getCurrentPosition(async (position) => {
-        const { latitude, longitude } = position.coords;
-        console.log(position);
-        
-
-        // 🔥 Calculate distance offline using Haversine formula
-        const distance = getDistance(latitude, longitude, OFFICE_LAT, OFFICE_LON);
-        console.log(distance);
-        
-        if (distance > MAX_DISTANCE) {
-            alert("⚠ You are too far from the office to mark attendance!");
-            return;
-        }
-
-        try {
-            await axios.post("http://localhost:3001/mark-attendance", { employee_id: employee.id });
-            alert("✅ Attendance marked successfully!");
-            closeModal();
-        } catch (error) {
-            console.error("❌ Error marking attendance:", error);
-        }
-    }, (error) => {
-        alert("❌ Location access denied. Please allow location.");
-    });
-};
-
-
-// const GOOGLE_API_KEY = process.env.REACT_APP_GOOGLE_API_KEY; // 🔒 Secure API Key
 
 // const confirmAttendance = async () => {
 //     if (!employee) return;
 
 //     if (!navigator.geolocation) {
-//         alert("❌ Location not supported on your device.");
+//         alert("Location not supported on your device.");
 //         return;
 //     }
 
 //     navigator.geolocation.getCurrentPosition(async (position) => {
 //         const { latitude, longitude } = position.coords;
+//         console.log(position);
+        
 
-//         const officeLocation = "28.7041,77.1025"; // 📍 Office coordinates
-//         const employeeLocation = `${latitude},${longitude}`;
+//         // Calculate distance offline using Haversine formula
+//         const distance = getDistance(latitude, longitude, OFFICE_LAT, OFFICE_LON);
+//         console.log(distance);
+        
+//         if (distance > MAX_DISTANCE) {
+//             alert("⚠ You are too far from the office to mark attendance!");
+//             return;
+//         }
 
 //         try {
-//             const response = await axios.get(
-//                 `https://maps.googleapis.com/maps/api/distancematrix/json?origins=${employeeLocation}&destinations=${officeLocation}&key=${GOOGLE_API_KEY}`
-//             );
-
-//             const distance = response.data.rows[0].elements[0].distance.value; // 🔥 Distance in meters
-
-//             if (distance > 200) {
-//                 alert("⚠ You are too far from the office to mark attendance!");
-//                 return;
-//             }
-
 //             await axios.post("http://localhost:3001/mark-attendance", { employee_id: employee.id });
-//             alert("✅ Attendance marked successfully!");
+//             alert("Attendance marked successfully!");
 //             closeModal();
 //         } catch (error) {
-//             console.error("❌ Error getting distance:", error);
-//             alert("❌ Error fetching location data. Try again.");
+//             console.error("Error marking attendance:", error);
 //         }
 //     }, (error) => {
-//         alert("❌ Location access denied. Please allow location.");
+//         alert("Location access denied. Please allow location.");
 //     });
 // };
+
+
+
+const confirmAttendance = async () => {
+    if (!employee) return;
+
+    if (!navigator.geolocation) {
+        alert("Location not supported on your device.");
+        return;
+    }
+
+    navigator.geolocation.getCurrentPosition(async (position) => {
+        const { latitude, longitude } = position.coords;
+
+        const officeLocation = "28.7041,77.1025"; // Office coordinates
+        const employeeLocation = `${latitude},${longitude}`;
+        console.log(employeeLocation)
+
+        try {
+            const response = await axios.get(
+                `https://maps.googleapis.com/maps/api/distancematrix/json?origins=${employeeLocation}&destinations=${officeLocation}&key=${GOOGLE_API_KEY}`
+            );
+
+            const distance = response.data.rows[0].elements[0].distance.value; // Distance in meters
+
+            if (distance > 200) {
+                alert("⚠ You are too far from the office to mark attendance!");
+                return;
+            }
+
+            await axios.post("http://localhost:3001/mark-attendance", { employee_id: employee.id });
+            alert("Attendance marked successfully!");
+            closeModal();
+        } catch (error) {
+            console.error("Error getting distance:", error);
+            alert("Error fetching location data. Try again.");
+        }
+    }, (error) => {
+        alert("Location access denied. Please allow location.");
+    });
+};
 
 
 
@@ -201,9 +203,9 @@ const confirmAttendance = async () => {
                                 <Webcam 
                                     ref={webcamRef} 
                                     screenshotFormat="image/jpeg" 
-                                    width={640} 
-                                    height={480}
-                                    videoConstraints={{ width: 640, height: 480, facingMode: "user" }} 
+                                    width={300} 
+                                    height={300}
+                                    videoConstraints={{ width: 300, height: 300, facingMode: "user" }} 
                                 />
 
                                 {/* Bootstrap Spinner while loading */}

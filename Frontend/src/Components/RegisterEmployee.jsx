@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import * as faceapi from "face-api.js";
 
@@ -21,9 +21,9 @@ function RegisterEmployee() {
                 await faceapi.nets.faceRecognitionNet.loadFromUri("/models");
                 await faceapi.nets.ssdMobilenetv1.loadFromUri(window.location.origin + "/models");
                 
-                console.log("✅ FaceAPI models loaded successfully!");
+                console.log("FaceAPI models loaded successfully!");
             } catch (error) {
-                console.error("❌ Error loading models:", error);
+                console.error("Error loading models:", error);
             }
         };
         loadModels();
@@ -110,6 +110,8 @@ function RegisterEmployee() {
     };
 
     return (
+        <>
+        <Link to='../employees'>Employee Records</Link>
         <form onSubmit={handleSubmit} method="post">
             <div className="mb-3">
                 <label className="form-label">Employee Name</label>
@@ -151,6 +153,7 @@ function RegisterEmployee() {
                 {loading ? "Registering..." : "Submit"}
             </button>
         </form>
+        </>
     );
 }
 
